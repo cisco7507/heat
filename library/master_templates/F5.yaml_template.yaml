@@ -1,0 +1,15 @@
+parameters:
+  ve_cluster_ready_image: cluster_ready-BIG-IP-11.6.0.0.0.401.qcow2
+  ve_standalone_image: standalone-BIG-IP-11.6.0.0.0.401.qcow2
+  ve_flavor: m1.small
+  ssh_key: my_key
+  sec_group_name: bigip_sec_group
+  admin_password: admin_password
+  root_password: root_password
+  license: XXXXX
+  external_network: public_net
+
+resource_registry:
+  OS::Neutron::FourNetworks: heat_template_test_networks.yaml
+  F5::BIGIP::ClusterableDevice: cluster_ready_ve_4_nic.yaml
+  F5::BIGIP::StandaloneDevice: f5_ve_standalone_3_nic.yaml

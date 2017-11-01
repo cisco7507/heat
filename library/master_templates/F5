@@ -1,0 +1,88 @@
+heat_template_version: 2015-04-30
+
+description: Setup infrastructure for testing F5 Heat Templates.
+
+parameters:
+  ve_cluster_ready_image:
+    type: string
+    constraints:
+      - custom_constraint: glance.image
+  ve_standalone_image:
+    type: string
+    constraints:
+      - custom_constraint: glance.image
+  ve_flavor:
+    type: string
+    constraints:
+      - custom_constraint: nova.flavor
+  use_config_drive:
+    type: boolean
+    default: false
+  ssh_key:
+    type: string
+    constraints:
+      - custom_constraint: nova.keypair
+  sec_group_name:
+    type: string
+  admin_password:
+    type: string
+    label: F5 VE Admin User Password
+    description: Password used to perform image import services
+  root_password:
+    type: string
+  license:
+    type: string
+  external_network:
+    type: string
+    constraints:
+      - custom_constraint: neutron.network
+  default_gateway:
+    type: string
+    default: None
+
+resources:
+  networking:
+    # A new resource
+    type: OS::Neutron::FourNetworks
+    properties:
+      external_network: { get_param: external_network }
+      sec_group_name: { get_param: sec_group_name }
+  two_bigip_devices:
+    type: OS::Heat::ResourceGroup
+    depends_on: networking
+    properties:
+      count: 2
+      resource_def:
+        # A new resource
+        type: F5::BIGIP::ClusterableDevice
+        properties:
+          ve_image: { get_param: ve_cluster_ready_image }
+          ve_flavor: { get_param: ve_flavor }
+          ssh_key: { get_param: ssh_key }
+          use_config_drive: { get_param: use_config_drive }
+          open_sec_group: { get_param: sec_group_name }
+          admin_password: { get_param: admin_password }
+          root_password: { get_param: root_password }
+          license: { get_param: license }
+          external_network: { get_param: external_network }
+          mgmt_network: { get_attr: [networking, mgmt_network_name] }
+          ha_network: { get_attr: [networking, ha_network_name] }
+          network_1: { get_attr: [networking, client_data_network_name] }
+          network_2: { get_attr: [networking, server_data_network_name] }
+  standalone_device:
+    # A new resource
+    type: F5::BIGIP::StandaloneDevice
+    depends_on: networking
+    properties:
+      ve_image: { get_param: ve_standalone_image }
+      ve_flavor: { get_param: ve_flavor }
+      ssh_key: { get_param: ssh_key }
+      use_config_drive: { get_param: use_config_drive }
+      open_sec_group: { get_param: sec_group_name }
+      admin_password: { get_param: admin_password }
+      root_password: { get_param: root_password }
+      license: { get_param: license }
+      external_network: { get_param: external_network }
+      mgmt_network: { get_attr: [networking, mgmt_network_name] }
+      network_1: { get_attr: [networking, client_data_network_name] }
+      network_2: { get_attr: [networking, server_data_network_name] }
